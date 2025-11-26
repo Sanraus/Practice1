@@ -1,0 +1,57 @@
+name: Java CI Pipeline
+
+# Запуск только при PR в ветку main
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    # запуск на ОС Linux
+    runs-on: ubuntu-latest
+    
+    # Используем образ с maven
+    container:
+      image: maven:3.9-eclipse-temurin-21
+
+    steps:
+    # i: клонирование репозитория
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # ii: проверка окружения
+    - name: Verify environment
+      run: |
+        java -version
+        mvn -version
+        pwd
+        ls -la
+
+    # iii: настройка прав доступа к скрипту mvnw 
+    - name: Set up Maven Wrapper permissions
+      run: |
+        if [ -f "mvnw" ]; then
+          chmod +x ./mvnw
+          echo "Maven Wrapper permissions set"
+        else
+          echo "Using system Maven"
+        fi
+
+    # iv: запуск утилиты mvn для сборки
+    - name: Build with Maven
+      run: mvn clean compile test package
+
+    # v: проверка результата
+    - name: Verify build results
+      run: |
+        echo "Build artifacts:"
+        ls -la target/
+        echo "JAR files:"
+        ls -la target/*.jar || echo "No JAR files found"
+
+    # vi: сохранение артефактов
+    - name: Upload JAR artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: java-app
+        path: target/*.jar
