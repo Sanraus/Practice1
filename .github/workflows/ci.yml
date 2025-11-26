@@ -10,16 +10,16 @@ jobs:
     # Запуск на ОС Linux
     runs-on: ubuntu-latest
     
-    # docker-образ с OpenJDK 21 и Maven
+    # Docker-образ с OpenJDK 21 и Maven
     container:
       image: eclipse-temurin:21-jdk-jammy
 
     steps:
-    # шаг1: клонирование репозитория
+    # i: клонирование репозитория
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # шаг2: настройка прав доступа к скрипту mvnw 
+    # ii: настройка прав доступа к скрипту mvnw 
     - name: Set up Maven Wrapper permissions
       run: |
         if [ -f "mvnw" ]; then
@@ -29,13 +29,13 @@ jobs:
           echo "Using system Maven"
         fi
 
-    # шаг3: запуск утилиты mvn для сборки
+    # iii: запуск утилиты mvn для сборки
     - name: Build with Maven
       run: mvn clean compile test package
 
-    # шаг4: сохранение артефактов
+    # iv: сохранение артефактов 
     - name: Upload JAR artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: java-app
         path: target/*.jar
