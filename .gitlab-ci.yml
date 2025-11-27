@@ -1,0 +1,19 @@
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == 'main'
+
+stages:
+  - build
+
+build-job:
+  stage: build
+  tags:
+    - sass-linux-small-amd64
+  image: eclipse-temurin:21-jdk-jammy
+  script:
+    - chmod +x ./mvnw
+    - ./mvnw clean compile test package
+  artifacts:
+    paths:
+      - target/*.jar
+    expire_in: 8 week
