@@ -1,0 +1,27 @@
+name: Java CI Pipeline
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: eclipse-temurin:21-jdk-jammy
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Maven Wrapper permissions
+        run: chmod +x ./mvnw
+
+      - name: Build with Maven Wrapper
+        run: ./mvnw clean compile test package
+
+      - name: Upload JAR artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-app
+          path: target/*.jar
