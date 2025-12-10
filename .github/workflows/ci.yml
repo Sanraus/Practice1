@@ -25,3 +25,24 @@ jobs:
         with:
           name: java-app
           path: target/*.jar
+
+  sast:
+    name: SAST Security Scan
+    needs: build  
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Run Semgrep SAST
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: "p/security-audit" 
+          generateSarif: "true"  
+          outputFormat: "sarif"
+      
+      - name: Upload SARIF report to GitHub
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: semgrep.sarif
