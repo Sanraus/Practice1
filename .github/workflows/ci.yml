@@ -1,4 +1,4 @@
-name: Java CI Pipeline
+name: Java CI with Security Scan
 
 on:
   pull_request:
@@ -25,3 +25,19 @@ jobs:
         with:
           name: java-app
           path: target/*.jar
+
+  security-check:
+    needs: build  
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install and run Semgrep
+        run: |
+          pip3 install semgrep
+          semgrep scan --config auto --sarif --output security-report.json
+      
+      - name: Upload security report
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: security-report.json
