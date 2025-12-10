@@ -1,4 +1,4 @@
-name: Java CI Pipeline
+name: Java CI Pipeline SAST
 
 on:
   pull_request:
@@ -25,3 +25,19 @@ jobs:
         with:
           name: java-app
           path: target/*.jar
+
+  sast:
+    needs: build  
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Run Semgrep SAST
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: "p/security-audit"
+      
+      - name: Upload SARIF report
+        uses: github/codeql-action/upload-sarif@v4
