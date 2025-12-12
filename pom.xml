@@ -97,12 +97,7 @@
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
-                <version>9.0.10</version>
-                <configuration>
-                    <formats>HTML</formats>
-                    <failOnError>false</failOnError>
-                    <suppressionFile>suppressions.xml</suppressionFile>
-                </configuration>
+                <version>12.1.9</version>
             </plugin>
         </plugins>
     </build>
