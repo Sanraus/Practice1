@@ -94,6 +94,16 @@
                     </excludes>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>9.0.10</version>
+                <configuration>
+                    <formats>HTML</formats>
+                    <failOnError>false</failOnError>
+                    <suppressionFile>suppressions.xml</suppressionFile>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
