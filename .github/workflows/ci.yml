@@ -50,10 +50,7 @@ jobs:
         run: chmod +x ./mvnw
 
       - name: Create suppressions.xml file
-        run: |
-          echo '<?xml version="1.0" encoding="UTF-8"?>
-<suppressions xmlns="https://owasp.org/www/oregon/2017/Suppressions">
-</suppressions>' > suppressions.xml
+        run: echo '<?xml version="1.0" encoding="UTF-8"?><suppressions xmlns="https://owasp.org/www/oregon/2017/Suppressions"></suppressions>' > suppressions.xml
 
       - name: Run OWASP Dependency-Check
         run: ./mvnw dependency-check:check -Dformat=HTML -DsuppressionFile=suppressions.xml
