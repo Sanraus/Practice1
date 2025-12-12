@@ -47,7 +47,7 @@ jobs:
     needs: build
 
     container:
-      image: maven:3.9-eclipse-temurin-21
+      image: maven:3.9.6-eclipse-temurin-21-alpine
 
     steps:
       - name: Checkout repo
@@ -56,8 +56,16 @@ jobs:
       - name: Permission for mvnw
         run: chmod +x ./mvnw
 
-      - name: OWASP check
-        run: ./mvnw org.owasp:dependency-check-maven:check -Dformat=HTML -DsuppressionFile=suppressions.xml -DfailOnError=false
+      - name: Create empty suppressions file if missing
+        run: |
+          if [ ! -f "suppressions.xml" ]; then
+            echo '<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://owasp.org/www/oregon/2017/Suppressions">
+</suppressions>' > suppressions.xml
+          fi
+
+      - name: Run OWASP Dependency-Check
+        run: ./mvnw dependency-check:check -Dformat=HTML -DsuppressionFile=suppressions.xml
 
       - name: Upload report
         uses: actions/upload-artifact@v4
