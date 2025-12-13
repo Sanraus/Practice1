@@ -1,4 +1,4 @@
-name: Java CI Pipeline
+name: Java CI
 
 on:
   pull_request:
@@ -11,17 +11,147 @@ jobs:
       image: eclipse-temurin:21-jdk-jammy
 
     steps:
-      - name: Checkout code
+      - name: checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Maven Wrapper permissions
+      - name: set up maven wrapper permissions
         run: chmod +x ./mvnw
 
-      - name: Build with Maven Wrapper
+      - name: build with maven wrapper
         run: ./mvnw clean compile test package
 
-      - name: Upload JAR artifacts
+      - name: upload jar artifact
         uses: actions/upload-artifact@v4
         with:
-          name: java-app
+          name: app-jar
           path: target/*.jar
+
+  security-check:
+    needs: build  
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      - name: install and run semgrep
+        run: |
+          pip3 install semgrep
+          semgrep scan --config auto --sarif --output security-report.json
+      
+      - name: upload security report
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: security-report.json
+
+  sca:
+    runs-on: ubuntu-latest
+    needs: build
+    container:
+      image: eclipse-temurin:21-jdk-jammy
+
+    steps:
+      - name: checkout repo
+        uses: actions/checkout@v4
+
+      - name: permission for mvnw
+        run: chmod +x ./mvnw
+
+      - name: run owasp dependency-check
+        run: ./mvnw org.owasp:dependency-check-maven:check -Dformat=HTML -DsuppressionFile=suppressions.xml -DfailOnError=false
+
+      - name: upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: sca-report
+          path: ./target/dependency-check-report.html
+
+  dast_baseline:
+    needs: build
+    runs-on: ubuntu-latest
+
+    container:
+      image: ghcr.io/zaproxy/zaproxy:latest
+      options: --user root
+
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+
+      - name: install java
+        run: |
+          apt-get update && apt-get install -y wget
+          cd /opt
+          wget https://download.java.net/java/GA/jdk21.0.2/f2283984656d49d69e91c558476027ac/13/GPL/openjdk-21.0.2_linux-x64_bin.tar.gz
+          tar -xzf openjdk-21.0.2_linux-x64_bin.tar.gz
+          export JAVA_HOME=/opt/jdk-21.0.2
+          export PATH=$JAVA_HOME/bin:$PATH
+
+      - name: download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-jar
+
+      # создаем пустой файл правил
+      - run: echo -n "" > /zap/wrk/zap-rules.tsv
+
+      - run: mkdir -p /zap/wrk/
+      
+      # запускаем приложение и ждем 30с
+      - run: /opt/jdk-21.0.2/bin/java -jar ./course-management-0.0.1-SNAPSHOT.jar &
+      - run: sleep 30
+      
+      # сканирование
+      - run: zap-baseline.py -t http://localhost:8080 -r report_site.html -I
+      - run: cp /zap/wrk/report_site.html report_site.html
+
+      # сохраняем отчет
+      - name: upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-base-report
+          path: ./report_site.html
+
+  dast_api:
+    needs: build
+    runs-on: ubuntu-latest
+
+    container:
+      image: ghcr.io/zaproxy/zaproxy:latest
+      options: --user root
+
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+
+      - name: install java
+        run: |
+          apt-get update && apt-get install -y wget
+          cd /opt
+          wget https://download.java.net/java/GA/jdk21.0.2/f2283984656d49d69e91c558476027ac/13/GPL/openjdk-21.0.2_linux-x64_bin.tar.gz
+          tar -xzf openjdk-21.0.2_linux-x64_bin.tar.gz
+          export JAVA_HOME=/opt/jdk-21.0.2
+          export PATH=$JAVA_HOME/bin:$PATH
+
+      - name: download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-jar
+
+      # создаем пустой файл правил
+      - run: echo -n "" > /zap/wrk/zap-rules.tsv
+
+      - run: mkdir -p /zap/wrk/
+      
+      # запускаем приложение и ждем 30с
+      - run: /opt/jdk-21.0.2/bin/java -jar ./course-management-0.0.1-SNAPSHOT.jar &
+      - run: sleep 30
+      
+      # сканирование api
+      - run: zap-api-scan.py -t http://localhost:8080 -f openapi -r report_site.html -I
+      - run: cp /zap/wrk/report_site.html report_site.html
+
+      # сохраняем отчет
+      - name: upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-api-report
+          path: ./report_site.html
