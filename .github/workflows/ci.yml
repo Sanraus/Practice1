@@ -68,10 +68,6 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
 
-    container:
-      image: ghcr.io/zaproxy/zaproxy:latest
-      options: --user root
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -85,13 +81,7 @@ jobs:
         run: echo "" > zap-rules.tsv
 
       - name: Install Java
-        run: |
-          apt-get update && apt-get install -y wget
-          cd /opt
-          wget https://download.java.net/java/GA/jdk21.0.2/f2283984656d49d69e91c558476027ac/13/GPL/openjdk-21.0.2_linux-x64_bin.tar.gz
-          tar -xzf openjdk-21.0.2_linux-x64_bin.tar.gz
-          export JAVA_HOME=/opt/jdk-21.0.2
-          export PATH=$JAVA_HOME/bin:$PATH
+        run: sudo apt-get update && sudo apt-get install -y openjdk-21-jre-headless
 
       - name: Start application
         run: |
@@ -99,24 +89,22 @@ jobs:
           sleep 30
 
       - name: Run ZAP baseline scan
-        uses: zaproxy/action-baseline@v0.9.0
-        with:
-          target: 'http://localhost:8080'
-          cmd_options: '-j'
+        run: |
+          docker run --network="host" -v $(pwd):/zap/wrk/:rw -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+            -t http://localhost:8080 \
+            -r report.html \
+            -j \
+            -I
 
       - name: Upload ZAP baseline report
         uses: actions/upload-artifact@v4
         with:
           name: zap-baseline-report
-          path: zap-report.html
+          path: report.html
 
   dast-api-scan:
     needs: build
     runs-on: ubuntu-latest
-
-    container:
-      image: ghcr.io/zaproxy/zaproxy:latest
-      options: --user root
 
     steps:
       - name: Checkout repository
@@ -131,13 +119,7 @@ jobs:
         run: echo "" > zap-rules.tsv
 
       - name: Install Java
-        run: |
-          apt-get update && apt-get install -y wget
-          cd /opt
-          wget https://download.java.net/java/GA/jdk21.0.2/f2283984656d49d69e91c558476027ac/13/GPL/openjdk-21.0.2_linux-x64_bin.tar.gz
-          tar -xzf openjdk-21.0.2_linux-x64_bin.tar.gz
-          export JAVA_HOME=/opt/jdk-21.0.2
-          export PATH=$JAVA_HOME/bin:$PATH
+        run: sudo apt-get update && sudo apt-get install -y openjdk-21-jre-headless
 
       - name: Start application
         run: |
@@ -145,12 +127,15 @@ jobs:
           sleep 30
 
       - name: Run ZAP API scan
-        uses: zaproxy/action-api-scan@v0.10.0
-        with:
-          target: 'http://localhost:8080'
+        run: |
+          docker run --network="host" -v $(pwd):/zap/wrk/:rw -t ghcr.io/zaproxy/zaproxy:stable zap-api-scan.py \
+            -t http://localhost:8080 \
+            -f openapi \
+            -r api-report.html \
+            -I
 
       - name: Upload ZAP API scan report
         uses: actions/upload-artifact@v4
         with:
           name: zap-api-report
-          path: zap-report.html
+          path: api-report.html
