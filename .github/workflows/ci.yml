@@ -20,7 +20,7 @@ jobs:
       - name: Build with Maven Wrapper
         run: ./mvnw clean compile test package
 
-        -name: Artifacts
+      - name: Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: app-jar
