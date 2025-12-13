@@ -68,10 +68,6 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
 
-    container:
-      image: ubuntu:22.04
-      options: --user root
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -83,18 +79,19 @@ jobs:
 
       - run: echo "" > zap-rules.tsv
 
-      - name: Install Java and ZAP
-        run: |
-          apt-get update
-          apt-get install -y openjdk-21-jre-headless wget python3 python3-pip
-          wget -qO- https://github.com/zaproxy/zaproxy/releases/download/v2.17.0/ZAP_2.17.0_Linux.tar.gz | tar xz
-          mv ZAP_2.17.0 /opt/zap
-          pip3 install zapcli
+      - name: Install Java
+        run: sudo apt-get update && sudo apt-get install -y openjdk-21-jre-headless
 
       - run: java -jar ./course-management-0.0.1-SNAPSHOT.jar &
       - run: sleep 40
 
-      - run: /opt/zap/zap-baseline.py -t http://localhost:8080 -r report.html -I
+      - name: Run ZAP baseline scan with Docker
+        run: |
+          docker run --network="host" -v $(pwd):/zap/wrk/:rw -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+            -t http://localhost:8080 \
+            -r report.html \
+            -j \
+            -I
 
       - uses: actions/upload-artifact@v4
         with:
@@ -105,10 +102,6 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
 
-    container:
-      image: ubuntu:22.04
-      options: --user root
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -120,18 +113,19 @@ jobs:
 
       - run: echo "" > zap-rules.tsv
 
-      - name: Install Java and ZAP
-        run: |
-          apt-get update
-          apt-get install -y openjdk-21-jre-headless wget python3 python3-pip
-          wget -qO- https://github.com/zaproxy/zaproxy/releases/download/v2.17.0/ZAP_2.17.0_Linux.tar.gz | tar xz
-          mv ZAP_2.17.0 /opt/zap
-          pip3 install zapcli
+      - name: Install Java
+        run: sudo apt-get update && sudo apt-get install -y openjdk-21-jre-headless
 
       - run: java -jar ./course-management-0.0.1-SNAPSHOT.jar &
       - run: sleep 40
 
-      - run: /opt/zap/zap-api-scan.py -t http://localhost:8080 -f openapi -r api-report.html -I
+      - name: Run ZAP API scan with Docker
+        run: |
+          docker run --network="host" -v $(pwd):/zap/wrk/:rw -t ghcr.io/zaproxy/zaproxy:stable zap-api-scan.py \
+            -t http://localhost:8080 \
+            -f openapi \
+            -r api-report.html \
+            -I
 
       - uses: actions/upload-artifact@v4
         with:
