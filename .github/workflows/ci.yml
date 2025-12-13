@@ -1,4 +1,4 @@
-name: Java CI Pipeline
+name: Java CI
 
 on:
   pull_request:
@@ -20,8 +20,137 @@ jobs:
       - name: Build with Maven Wrapper
         run: ./mvnw clean compile test package
 
-      - name: Upload JAR artifacts
+      - name: Upload JAR artifact
         uses: actions/upload-artifact@v4
         with:
-          name: java-app
+          name: app-jar
           path: target/*.jar
+
+  security-check:
+    needs: build  
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install and run Semgrep
+        run: |
+          pip3 install semgrep
+          semgrep scan --config auto --sarif --output security-report.json
+      
+      - name: Upload security report
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: security-report.json
+
+  sca:
+    runs-on: ubuntu-latest
+    needs: build
+    container:
+      image: eclipse-temurin:21-jdk-jammy
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Permission for mvnw
+        run: chmod +x ./mvnw
+
+      - name: Run OWASP Dependency-Check
+        run: ./mvnw org.owasp:dependency-check-maven:check -Dformat=HTML -DsuppressionFile=suppressions.xml -DfailOnError=false
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: sca-report
+          path: ./target/dependency-check-report.html
+
+  dast-baseline:
+    needs: build
+    runs-on: ubuntu-latest
+
+    container:
+      image: ghcr.io/zaproxy/zaproxy:latest
+      options: --user root
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download JAR artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-jar
+
+      - name: Create empty ZAP rules file
+        run: echo "" > zap-rules.tsv
+
+      - name: Install Java
+        run: |
+          apt-get update && apt-get install -y wget
+          cd /opt
+          wget https://download.java.net/java/GA/jdk21.0.2/f2283984656d49d69e91c558476027ac/13/GPL/openjdk-21.0.2_linux-x64_bin.tar.gz
+          tar -xzf openjdk-21.0.2_linux-x64_bin.tar.gz
+          export JAVA_HOME=/opt/jdk-21.0.2
+          export PATH=$JAVA_HOME/bin:$PATH
+
+      - name: Start application
+        run: |
+          java -jar ./course-management-0.0.1-SNAPSHOT.jar &
+          sleep 30
+
+      - name: Run ZAP baseline scan
+        uses: zaproxy/action-baseline@v0.9.0
+        with:
+          target: 'http://localhost:8080'
+          cmd_options: '-j'
+
+      - name: Upload ZAP baseline report
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-baseline-report
+          path: zap-report.html
+
+  dast-api-scan:
+    needs: build
+    runs-on: ubuntu-latest
+
+    container:
+      image: ghcr.io/zaproxy/zaproxy:latest
+      options: --user root
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download JAR artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-jar
+
+      - name: Create empty ZAP rules file
+        run: echo "" > zap-rules.tsv
+
+      - name: Install Java
+        run: |
+          apt-get update && apt-get install -y wget
+          cd /opt
+          wget https://download.java.net/java/GA/jdk21.0.2/f2283984656d49d69e91c558476027ac/13/GPL/openjdk-21.0.2_linux-x64_bin.tar.gz
+          tar -xzf openjdk-21.0.2_linux-x64_bin.tar.gz
+          export JAVA_HOME=/opt/jdk-21.0.2
+          export PATH=$JAVA_HOME/bin:$PATH
+
+      - name: Start application
+        run: |
+          java -jar ./course-management-0.0.1-SNAPSHOT.jar &
+          sleep 30
+
+      - name: Run ZAP API scan
+        uses: zaproxy/action-api-scan@v0.10.0
+        with:
+          target: 'http://localhost:8080'
+
+      - name: Upload ZAP API scan report
+        uses: actions/upload-artifact@v4
+        with:
+          name: zap-api-report
+          path: zap-report.html
