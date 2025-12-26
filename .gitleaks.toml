@@ -1,0 +1,19 @@
+title = "GitHub Secret Detection"
+
+[[rules]]
+id = "password"
+description = "Пароли"
+regex = '''(?i)password\s*[=:]\s*["']?([^"'\s]{4,})["']?'''
+
+[[rules]]
+id = "api-key"
+description = "API ключи"
+regex = '''(?i)(api[_-]?key)\s*[=:]\s*["']?([a-z0-9_-]{20,})["']?'''
+
+[[rules]]
+id = "aws-key"
+description = "AWS ключи"
+regex = '''(AKIA|A3T)[A-Z0-9]{16}'''
+
+[[allowlist]]
+paths = ["**/test/**", "**/*Test.java", "pom.xml", ".github/**"]
