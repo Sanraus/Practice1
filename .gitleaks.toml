@@ -1,0 +1,35 @@
+title = "Secret Detection"
+
+[[rules]]
+id = "hardcoded-password"
+description = "Hardcoded passwords"
+regex = '''["']?(password|pass|pwd|secret)["']?\s*[:=]\s*["']([^"'\s]{4,})["']'''
+tags = ["password", "hardcoded"]
+
+[[rules]]
+id = "password-in-code"
+description = "Password in code"
+regex = '''\b(password|passwd|pwd)\s*[=:]\s*["']([^"'\s]{4,})["']'''
+tags = ["password", "code"]
+
+[[rules]]
+id = "api-key-general"
+description = "General API keys"
+regex = '''\b(api[_-]?key|secret[_-]?key|token)\s*[=:]\s*["']([a-zA-Z0-9_\-]{20,50})["']'''
+tags = ["api-key", "secret"]
+
+[[rules]]
+id = "aws-access-key"
+description = "AWS Access Key"
+regex = '''\b(AKIA|A3T)[A-Z0-9]{16}\b'''
+tags = ["aws", "key"]
+
+[[allowlist]]
+paths = ["**/test/**", "pom.xml", ".github/**", "**/*.md"]
+
+[[allowlist]]
+regexes = [
+  '''example.*''',
+  '''test.*''',
+  '''sample.*'''
+]
