@@ -3,9 +3,29 @@ name: Java CI
 on:
   pull_request:
     branches: [ "main" ]
+  push:
+    branches: [ "main" ]
 
 jobs:
+  secret-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Run GitLeaks Secret Detection
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          config-path: .gitleaks.toml
+          redact: true
+          verbose: true
+          exit-code: 1
+
   build:
+    needs: secret-check
     runs-on: ubuntu-latest
     container:
       image: eclipse-temurin:21-jdk-jammy
@@ -27,7 +47,7 @@ jobs:
           path: ./target/*.jar
 
   security-check:
-    needs: build  
+    needs: build
     runs-on: ubuntu-latest
     
     steps:
