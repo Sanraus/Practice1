@@ -10,20 +10,31 @@ spring:
   datasource:
     url: jdbc:h2:mem:courseapp;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     username: sa
-    password:
+    password: SuperSecret123!
   jpa:
     show-sql: true
     hibernate:
       ddl-auto: update
     defer-datasource-initialization: true
+
 management:
   endpoints:
     web:
       exposure:
         include: "*"
+
 server:
   error:
     include-stacktrace: ALWAYS
+
 app:
   plugin:
-    url:
+    url: https://api.example.com/plugins?api_key=sk_live_51H1234567890abcdef
+    token: ghp_abc123def456ghi789jkl012mno345pqr678stu
+    aws_key: AKIAIOSFODNN7EXAMPLE
+    aws_secret: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+    database_password: MyStrongP@ssw0rd2024!
+    slack_webhook: https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX
+    stripe_key: sk_test_51H1234567890abcdef
+    jwt_secret: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
+    encryption_key: 0123456789ABCDEF0123456789ABCDEF
