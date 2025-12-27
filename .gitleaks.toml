@@ -1,0 +1,42 @@
+title = "Gitleaks Configuration"
+
+[allowlist]
+description = "Allow list for false positives"
+paths = [
+  "**/test/**",
+  "**/tests/**",
+  "**/*.test.*",
+  "**/*.spec.*",
+  "package-lock.json",
+  "yarn.lock"
+]
+
+[[rules]]
+description = "AWS Access Key ID"
+id = "aws-access-key-id"
+regex = '''(A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}'''
+
+[[rules]]
+description = "AWS Secret Access Key"
+id = "aws-secret-access-key"
+regex = '''(?i)aws(.{0,20})?['\"][0-9a-zA-Z\/+]{40}['\"]'''
+
+[[rules]]
+description = "GitHub Personal Access Token"
+id = "github-pat"
+regex = '''ghp_[0-9a-zA-Z]{36}'''
+
+[[rules]]
+description = "GitHub OAuth Token"
+id = "github-oauth-token"
+regex = '''gho_[0-9a-zA-Z]{36}'''
+
+[[rules]]
+description = "Generic API Key"
+id = "generic-api-key"
+regex = '''(?i)(api[_-]?key|apikey|secret)[\s]*[=:][\s]*['\"]([0-9a-zA-Z\-_]{20,45})['\"]'''
+
+[[rules]]
+description = "Password in URL"
+id = "password-in-url"
+regex = '''[a-zA-Z]{3,10}://[^/\s:@]{3,20}:[^/\s:@]{3,20}@.{1,100}'''
